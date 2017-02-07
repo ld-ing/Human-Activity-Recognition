@@ -15,6 +15,7 @@
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 load('samsungData.rda')  # Be sure this is also in the working directory
 
+samsungData <- samsungData[!duplicated(lapply(samsungData, summary))]
 # Data pre-processing
 colnames(samsungData) <- make.names(c(1:563))  # make clear column names
 samsungData$X563 <- as.factor(samsungData$X563)  # y as a factor
