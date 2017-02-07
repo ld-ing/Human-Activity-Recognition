@@ -15,12 +15,15 @@
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 load('samsungData.rda')  # Be sure this is also in the working directory
 
-samsungData <- samsungData[!duplicated(lapply(samsungData, summary))]
 # Data pre-processing
-colnames(samsungData) <- make.names(c(1:563))  # make clear column names
-samsungData$X563 <- as.factor(samsungData$X563)  # y as a factor
-samsungData$X563 <- as.numeric(samsungData$X563)-1  # make y 0,1,2.. for XGBoost
-samsungData <- samsungData[,-562]  # drop useless column
+samsungData <- samsungData[!duplicated(lapply(samsungData, summary))]
+featureName <- colnames(samsungData)  # save original feature names after unique
+colnames(samsungData) <- make.names(c(1:ncol(samsungData)))  # make clear column names, totally 542
+samsungData$X542 <- as.factor(samsungData$X542)  # y as a factor
+samsungData$X542 <- as.numeric(samsungData$X542)-1  # make y 0,1,2.. for XGBoost
+samsungData <- samsungData[,-541]  # drop useless column
+# Now we have 7352 obs. of 541 variables
+
 
 # Briefly, we do a 7:1:2 split for training, validation, and test.
 set.seed(822)
@@ -38,7 +41,7 @@ test <- test[-id,]
 library(randomForest)
 
 set.seed(822)
-model <- randomForest(X563~., data = train, ntree=100)
+model <- randomForest(X542~., data = train, ntree=100)
 
 # The 10 most important features
 f <- tail(order(model$importance),20)
@@ -68,9 +71,9 @@ for (i in 1:choose(20,2)){
   cat('\n')
   
   # Subsample the data with only selected features
-  traini <- train[,c(562,f[flist[[i]]])]
-  vali <- val[,c(562,f[flist[[i]]])]
-  testi <- test[,c(562,f[flist[[i]]])]
+  traini <- train[,c(541,f[flist[[i]]])]
+  vali <- val[,c(541,f[flist[[i]]])]
+  testi <- test[,c(541,f[flist[[i]]])]
   dtraini <- xgb.DMatrix(data = data.matrix(traini[,-1]), label = traini[,1])
   dvali <- xgb.DMatrix(data = data.matrix(vali[,-1]), label = vali[,1])
   dtesti <- xgb.DMatrix(data = data.matrix(testi[,-1]), label = testi[,1])
@@ -99,17 +102,17 @@ for (i in 1:choose(20,2)){
 colnames(result) <- c('feature_selected_1', 'feature_selected_2', 'val_error')
 
 min(result$val_error)
-# Minimal Validation Error 0.1815681
+# Minimal Validation Error 0.1788171
 result[which.min(result$val_error),-3]
-# Best round 9, feature 42, 84 are selected
-besti <- which.min(result$val_error)  # 9
+# Best round 28, feature 539, 84 are selected
+besti <- which.min(result$val_error)  # besti = 28
 
 
 # Testing the best model with test data
 i <- besti
-traini <- train[,c(562,f[flist[[i]]])]
-vali <- val[,c(562,f[flist[[i]]])]
-testi <- test[,c(562,f[flist[[i]]])]
+traini <- train[,c(541,f[flist[[i]]])]
+vali <- val[,c(541,f[flist[[i]]])]
+testi <- test[,c(541,f[flist[[i]]])]
 dtraini <- xgb.DMatrix(data = data.matrix(traini[,-1]), label = traini[,1])
 dvali <- xgb.DMatrix(data = data.matrix(vali[,-1]), label = vali[,1])
 dtesti <- xgb.DMatrix(data = data.matrix(testi[,-1]), label = testi[,1])
@@ -120,12 +123,12 @@ testerr <- sum(predict(model,dtesti) != testi[,1])/nrow(testi)
 
 result <- cbind(trainerr, valerr, testerr)
 colnames(result) <- c('training_error','validation_error','test_error')
-rownames(result) <- 'feature 42, 84'
+rownames(result) <- 'feature 539, 84'
 
 result
 # training_error   validation_error   test_error
-#  0.1352507         0.1815681        0.1757945
-# The test accuracy is 1 - 0.1757945 = 0.8242055, already above 80%.
+#  0.1315585         0.1788171         0.1724138
+# The test accuracy is 1 - 0.1724138 = 0.8275862, already above 80%.
 
 
 
@@ -149,9 +152,9 @@ for (i in 1:choose(20,3)){
   cat('\n')
   
   # Subsample the data with only selected features
-  traini <- train[,c(562,f[flist[[i]]])]
-  vali <- val[,c(562,f[flist[[i]]])]
-  testi <- test[,c(562,f[flist[[i]]])]
+  traini <- train[,c(541,f[flist[[i]]])]
+  vali <- val[,c(541,f[flist[[i]]])]
+  testi <- test[,c(541,f[flist[[i]]])]
   dtraini <- xgb.DMatrix(data = data.matrix(traini[,-1]), label = traini[,1])
   dvali <- xgb.DMatrix(data = data.matrix(vali[,-1]), label = vali[,1])
   dtesti <- xgb.DMatrix(data = data.matrix(testi[,-1]), label = testi[,1])
@@ -179,16 +182,16 @@ for (i in 1:choose(20,3)){
 colnames(result) <- c('feature_selected_1', 'feature_selected_2', 'feature_selected_3', 'val_error')
 
 min(result$val_error)
-# 0.0866575
+# 0.06327373
 result[which.min(result$val_error),-4]
-# round 130, feature 42, 53, 394
+# round 279, feature 539, 53, 365
 besti <- which.min(result$val_error)
 
 # Testing the best model with test data
 i <- besti
-traini <- train[,c(562,f[flist[[i]]])]
-vali <- val[,c(562,f[flist[[i]]])]
-testi <- test[,c(562,f[flist[[i]]])]
+traini <- train[,c(541,f[flist[[i]]])]
+vali <- val[,c(541,f[flist[[i]]])]
+testi <- test[,c(541,f[flist[[i]]])]
 dtraini <- xgb.DMatrix(data = data.matrix(traini[,-1]), label = traini[,1])
 dvali <- xgb.DMatrix(data = data.matrix(vali[,-1]), label = vali[,1])
 dtesti <- xgb.DMatrix(data = data.matrix(testi[,-1]), label = testi[,1])
@@ -199,11 +202,11 @@ testerr <- sum(predict(model,dtesti) != testi[,1])/nrow(testi)
 
 result <- cbind(trainerr, valerr, testerr)
 colnames(result) <- c('training_error','validation_error','test_error')
-rownames(result) <- 'feature 42, 53, 394'
+rownames(result) <- 'feature 539, 53, 365'
 
 result
-# training_error   validation_error   test_error
-#  0.01146522        0.0866575        0.0831643
+# training_error   validation_error    test_error
+#  0.004469491        0.06327373        0.0831643
 # The test accuracy is 1 - 0.0831643 = 0.9168357, already above 90%.
 
 
