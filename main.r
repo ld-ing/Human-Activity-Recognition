@@ -9,7 +9,7 @@
 
 # ---------- Data Preparation -------------
 # Uncomment the following line if you don't have rstudioapi installed
-#install.packages("rstudioapi")
+install.packages("rstudioapi")
 
 # Set working directory the same as the script
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -43,7 +43,7 @@ library(randomForest)
 set.seed(822)
 model <- randomForest(X542~., data = train, ntree=100)
 
-# The 10 most important features
+# The 20 most important features
 f <- tail(order(model$importance),20)
 
 
@@ -79,7 +79,10 @@ for (i in 1:choose(20,2)){
   dtesti <- xgb.DMatrix(data = data.matrix(testi[,-1]), label = testi[,1])
   
   # Modeling
-  model <- xgb.train(data = dtraini, max.depth = 6, nrounds = 1000, objective = "multi:softmax", num_class = 6, verbose = 1, watchlist = list(validation = dvali), maximize = FALSE, early.stop.round = 30, print.every.n = 1000, salient = 1, eta = 0.1)
+  model <- xgb.train(data = dtraini, max.depth = 6, nrounds = 1000,
+                     objective = "multi:softmax", num_class = 6, verbose = 1, 
+                     watchlist = list(validation = dvali), maximize = FALSE, 
+                     early.stop.round = 30, print.every.n = 1000, salient = 1, eta = 0.1)
   
   # Save the best model
   valerr <- sum(predict(model,dvali) != vali[,1])/nrow(vali)
@@ -103,7 +106,7 @@ colnames(result) <- c('feature_selected_1', 'feature_selected_2', 'val_error')
 
 min(result$val_error)
 # Minimal Validation Error 0.1788171
-result[which.min(result$val_error),-3]
+result[which.min(result$val_error), -3]
 # Best round 28, feature 539, 84 are selected
 besti <- which.min(result$val_error)  # besti = 28
 
